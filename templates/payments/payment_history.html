@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans 'Payment History' %}{% endblock title %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'tuition_payment' %}">{% trans 'Tuition Payment' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Payment History' %}</li>
+    </ol>
+</nav>
+
+{% include 'snippets/messages.html' %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<h1 class="title-1">{% trans 'Payment History' %}</h1>
+</div>
+
+{% if student %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{% trans 'All Tuition Payments' %}</h5>
+    </div>
+    <div class="card-body">
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Program' %}</th>
+                        <th>{% trans 'Level' %}</th>
+                        <th>{% trans 'Year/Semester' %}</th>
+                        <th>{% trans 'Tuition Fee' %}</th>
+                        <th>{% trans 'Amount Paid' %}</th>
+                        <th>{% trans 'Balance' %}</th>
+                        <th>{% trans 'Status' %}</th>
+                        <th>{% trans 'Date' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.program.title }}</td>
+                        <td>{{ payment.level }}</td>
+                        <td>{{ payment.year }} {{ payment.semester }}</td>
+                        <td>${{ payment.tuition_fee.amount }}</td>
+                        <td>${{ payment.amount_paid }}</td>
+                        <td>${{ payment.balance }}</td>
+                        <td>
+                            {% if payment.payment_status == 'PENDING' %}
+                                <span class="badge bg-warning">{% trans 'Pending' %}</span>
+                            {% elif payment.payment_status == 'PARTIAL' %}
+                                <span class="badge bg-info">{% trans 'Partial' %}</span>
+                            {% elif payment.payment_status == 'PAID' %}
+                                <span class="badge bg-success">{% trans 'Paid' %}</span>
+                            {% elif payment.payment_status == 'OVERPAID' %}
+                                <span class="badge bg-primary">{% trans 'Overpaid' %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ payment.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p>{% trans 'You have not made any tuition payments yet.' %}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <h4>{% trans 'Access Denied' %}</h4>
+    <p>{% trans 'You must be a student to access this page.' %}</p>
+</div>
+{% endif %}
+
+{% endblock content %}

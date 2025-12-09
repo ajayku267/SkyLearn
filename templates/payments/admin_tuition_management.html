@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans 'Admin Tuition Management' %}{% endblock title %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Admin Tuition Management' %}</li>
+    </ol>
+</nav>
+
+{% include 'snippets/messages.html' %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<h1 class="title-1">{% trans 'Admin Tuition Management' %}</h1>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="fees-tab" data-bs-toggle="tab" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="true">{% trans 'Tuition Fees' %}</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">{% trans 'Student Payments' %}</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab" aria-controls="create" aria-selected="false">{% trans 'Create Tuition Fee' %}</button>
+  </li>
+</ul>
+
+<div class="tab-content" id="myTabContent">
+  <!-- Tuition Fees Tab -->
+  <div class="tab-pane fade show active" id="fees" role="tabpanel" aria-labelledby="fees-tab">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">{% trans 'Tuition Fees' %}</h5>
+      </div>
+      <div class="card-body">
+        {% if tuition_fees %}
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>{% trans 'Program' %}</th>
+                <th>{% trans 'Level' %}</th>
+                <th>{% trans 'Year' %}</th>
+                <th>{% trans 'Semester' %}</th>
+                <th>{% trans 'Amount' %}</th>
+                <th>{% trans 'Created At' %}</th>
+                <th>{% trans 'Actions' %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in tuition_fees %}
+              <tr>
+                <td>{{ fee.program.title }}</td>
+                <td>{{ fee.level }}</td>
+                <td>{{ fee.year }}</td>
+                <td>{{ fee.semester }}</td>
+                <td>${{ fee.amount }}</td>
+                <td>{{ fee.created_at|date:"M d, Y" }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" disabled>{% trans 'Edit' %}</button>
+                  <button class="btn btn-sm btn-outline-danger" disabled>{% trans 'Delete' %}</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+          <p>{% trans 'No tuition fees have been set yet.' %}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Student Payments Tab -->
+  <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">{% trans 'Student Payments' %}</h5>
+      </div>
+      <div class="card-body">
+        {% if student_payments %}
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>{% trans 'Student' %}</th>
+                <th>{% trans 'Program' %}</th>
+                <th>{% trans 'Level' %}</th>
+                <th>{% trans 'Year/Semester' %}</th>
+                <th>{% trans 'Tuition Fee' %}</th>
+                <th>{% trans 'Amount Paid' %}</th>
+                <th>{% trans 'Balance' %}</th>
+                <th>{% trans 'Status' %}</th>
+                <th>{% trans 'Date' %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in student_payments %}
+              <tr>
+                <td>{{ payment.student.student.get_full_name }} ({{ payment.student.student.username }})</td>
+                <td>{{ payment.program.title }}</td>
+                <td>{{ payment.level }}</td>
+                <td>{{ payment.year }} {{ payment.semester }}</td>
+                <td>${{ payment.tuition_fee.amount }}</td>
+                <td>${{ payment.amount_paid }}</td>
+                <td>${{ payment.balance }}</td>
+                <td>
+                  {% if payment.payment_status == 'PENDING' %}
+                    <span class="badge bg-warning">{% trans 'Pending' %}</span>
+                  {% elif payment.payment_status == 'PARTIAL' %}
+                    <span class="badge bg-info">{% trans 'Partial' %}</span>
+                  {% elif payment.payment_status == 'PAID' %}
+                    <span class="badge bg-success">{% trans 'Paid' %}</span>
+                  {% elif payment.payment_status == 'OVERPAID' %}
+                    <span class="badge bg-primary">{% trans 'Overpaid' %}</span>
+                  {% endif %}
+                </td>
+                <td>{{ payment.created_at|date:"M d, Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+          <p>{% trans 'No student payments have been recorded yet.' %}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create Tuition Fee Tab -->
+  <div class="tab-pane fade" id="create" role="tabpanel" aria-labelledby="create-tab">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">{% trans 'Create New Tuition Fee' %}</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{% url 'create_tuition_fee' %}">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="program" class="form-label">{% trans 'Program' %}</label>
+              <select class="form-select" id="program" name="program" required>
+                <option value="">{% trans 'Select Program' %}</option>
+                {% for program in programs %}
+                <option value="{{ program.id }}">{{ program.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="level" class="form-label">{% trans 'Level' %}</label>
+              <select class="form-select" id="level" name="level" required>
+                <option value="">{% trans 'Select Level' %}</option>
+                {% for level_choice in settings.LEVEL_CHOICES %}
+                <option value="{{ level_choice.0 }}">{{ level_choice.1 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="year" class="form-label">{% trans 'Year' %}</label>
+              <select class="form-select" id="year" name="year" required>
+                <option value="">{% trans 'Select Year' %}</option>
+                {% for year_choice in settings.YEARS %}
+                <option value="{{ year_choice.0 }}">{{ year_choice.1 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="semester" class="form-label">{% trans 'Semester' %}</label>
+              <select class="form-select" id="semester" name="semester" required>
+                <option value="">{% trans 'Select Semester' %}</option>
+                {% for semester_choice in settings.SEMESTER_CHOICES %}
+                <option value="{{ semester_choice.0 }}">{{ semester_choice.1 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="amount" class="form-label">{% trans 'Amount ($)' %}</label>
+            <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">{% trans 'Create Tuition Fee' %}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

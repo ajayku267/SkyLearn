@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %} {% trans 'Teacher Dashboard' %} | {% trans 'Learning management system' %}{% endblock title %}
+
+{% load static %}
+
+{% block content %}
+
+{% if user.is_authenticated and user.is_lecturer %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Teacher Dashboard' %}</li>
+    </ol>
+</nav>
+
+{% include 'snippets/messages.html' %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<h1 class="title-1">{% trans 'Teacher Dashboard' %}</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-book me-2"></i>{% trans 'My Courses' %}</h5>
+                <h2 class="display-4">{{ courses.count }}</h2>
+                <p class="text-muted">{% trans 'Courses assigned to you' %}</p>
+                <a href="{% url 'user_course_list' %}" class="btn btn-outline-primary btn-sm">{% trans 'View All' %}</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-question-circle me-2"></i>{% trans 'Quizzes Created' %}</h5>
+                <h2 class="display-4">{{ quizzes.count }}</h2>
+                <p class="text-muted">{% trans 'Quizzes you have created' %}</p>
+                <a href="{% url 'quiz_list' %}" class="btn btn-outline-primary btn-sm">{% trans 'View All' %}</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-users me-2"></i>{% trans 'Students' %}</h5>
+                <h2 class="display-4">{{ courses.aggregate_student_count|default:0 }}</h2>
+                <p class="text-muted">{% trans 'Students in your courses' %}</p>
+                <a href="{% url 'student_list' %}" class="btn btn-outline-primary btn-sm">{% trans 'View All' %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>{% trans 'Recent Quiz Attempts' %}</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_attempts %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans 'Student' %}</th>
+                                <th>{% trans 'Quiz' %}</th>
+                                <th>{% trans 'Course' %}</th>
+                                <th>{% trans 'Score' %}</th>
+                                <th>{% trans 'Date' %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in recent_attempts %}
+                            <tr>
+                                <td>{{ attempt.user.get_full_name }}</td>
+                                <td>{{ attempt.quiz.title }}</td>
+                                <td>{{ attempt.course.title }}</td>
+                                <td>{{ attempt.get_current_score }}/{{ attempt.get_max_score }} ({{ attempt.get_percent_correct }}%)</td>
+                                <td>{{ attempt.end|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">{% trans 'No recent quiz attempts by students.' %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-book me-2"></i>{% trans 'My Courses' %}</h5>
+            </div>
+            <div class="card-body">
+                {% if courses %}
+                <ul class="list-group list-group-flush">
+                    {% for course in courses %}
+                    <li class="list-group-item">
+                        <a href="{{ course.get_absolute_url }}">{{ course.title }}</a>
+                        <span class="badge bg-secondary float-end">{{ course.code }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">{% trans 'You have not been assigned any courses yet.' %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar me-2"></i>{% trans 'Academic Information' %}</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>{% trans 'Current Semester:' %}</strong> 
+                    {% if current_semester and current_session %}
+                        {{ current_semester }} {% trans 'Semester' %} {{ current_session }}
+                    {% else %}
+                        {% trans 'Not set' %}
+                    {% endif %}
+                </p>
+                <p><strong>{% trans 'Last Login:' %}</strong> {{ user.last_login|date:"M d, Y H:i" }}</p>
+                <p><strong>{% trans 'Member Since:' %}</strong> {{ user.date_joined|date:"M d, Y" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <h4>{% trans 'Access Denied' %}</h4>
+    <p>{% trans 'You do not have permission to view this page.' %}</p>
+</div>
+{% endif %}
+
+{% endblock content %}

@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans 'Tuition Payment' %}{% endblock title %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Tuition Payment' %}</li>
+    </ol>
+</nav>
+
+{% include 'snippets/messages.html' %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<h1 class="title-1">{% trans 'Tuition Payment' %}</h1>
+</div>
+
+{% if student %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans 'Current Tuition Fee' %}</h5>
+            </div>
+            <div class="card-body">
+                {% if tuition_fee %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>{% trans 'Program:' %}</strong> {{ tuition_fee.program.title }}</p>
+                        <p><strong>{% trans 'Level:' %}</strong> {{ tuition_fee.level }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>{% trans 'Year:' %}</strong> {{ tuition_fee.year }}</p>
+                        <p><strong>{% trans 'Semester:' %}</strong> {{ tuition_fee.semester }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><strong>{% trans 'Total Amount:' %}</strong> ${{ tuition_fee.amount }}</h4>
+                    </div>
+                    <div class="col-md-6">
+                        {% if student_payment %}
+                        <h4><strong>{% trans 'Amount Paid:' %}</strong> ${{ student_payment.amount_paid }}</h4>
+                        <h4><strong>{% trans 'Balance:' %}</strong> ${{ student_payment.balance }}</h4>
+                        <p><strong>{% trans 'Status:' %}</strong> 
+                            {% if student_payment.payment_status == 'PENDING' %}
+                                <span class="badge bg-warning">{% trans 'Pending' %}</span>
+                            {% elif student_payment.payment_status == 'PARTIAL' %}
+                                <span class="badge bg-info">{% trans 'Partial Payment' %}</span>
+                            {% elif student_payment.payment_status == 'PAID' %}
+                                <span class="badge bg-success">{% trans 'Fully Paid' %}</span>
+                            {% elif student_payment.payment_status == 'OVERPAID' %}
+                                <span class="badge bg-primary">{% trans 'Overpaid' %}</span>
+                            {% endif %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if student_payment and student_payment.payment_status != 'PAID' %}
+                <hr>
+                <h5>{% trans 'Make a Payment' %}</h5>
+                <form method="POST" action="{% url 'create_invoice' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="student_payment_id" value="{{ student_payment.id }}">
+                    <div class="form-group mb-3">
+                        <label for="amount">{% trans 'Payment Amount' %}</label>
+                        <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" max="{{ student_payment.balance }}" required>
+                        <small class="form-text text-muted">{% trans 'Enter amount to pay (maximum: $' %}{{ student_payment.balance }})</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{% trans 'Proceed to Payment' %}</button>
+                </form>
+                {% endif %}
+                
+                {% else %}
+                <div class="alert alert-info">
+                    <p>{% trans 'No tuition fee has been set for your program, level, semester, and year.' %}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if payment_history %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans 'Payment History' %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans 'Program' %}</th>
+                                <th>{% trans 'Level' %}</th>
+                                <th>{% trans 'Year/Semester' %}</th>
+                                <th>{% trans 'Amount Paid' %}</th>
+                                <th>{% trans 'Status' %}</th>
+                                <th>{% trans 'Date' %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payment_history %}
+                            <tr>
+                                <td>{{ payment.program.title }}</td>
+                                <td>{{ payment.level }}</td>
+                                <td>{{ payment.year }} {{ payment.semester }}</td>
+                                <td>${{ payment.amount_paid }}</td>
+                                <td>
+                                    {% if payment.payment_status == 'PENDING' %}
+                                        <span class="badge bg-warning">{% trans 'Pending' %}</span>
+                                    {% elif payment.payment_status == 'PARTIAL' %}
+                                        <span class="badge bg-info">{% trans 'Partial' %}</span>
+                                    {% elif payment.payment_status == 'PAID' %}
+                                        <span class="badge bg-success">{% trans 'Paid' %}</span>
+                                    {% elif payment.payment_status == 'OVERPAID' %}
+                                        <span class="badge bg-primary">{% trans 'Overpaid' %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ payment.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans 'Student Information' %}</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>{% trans 'Name:' %}</strong> {{ student.student.get_full_name }}</p>
+                <p><strong>{% trans 'ID:' %}</strong> {{ student.student.username }}</p>
+                <p><strong>{% trans 'Program:' %}</strong> {{ student.program.title }}</p>
+                <p><strong>{% trans 'Level:' %}</strong> {{ student.level }}</p>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans 'Payment Instructions' %}</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>{% trans 'Check your current tuition fee and balance' %}</li>
+                    <li>{% trans 'Enter the amount you wish to pay' %}</li>
+                    <li>{% trans 'Click "Proceed to Payment"' %}</li>
+                    <li>{% trans 'Select your preferred payment method' %}</li>
+                    <li>{% trans 'Complete the payment process' %}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <h4>{% trans 'Access Denied' %}</h4>
+    <p>{% trans 'You must be a student to access this page.' %}</p>
+</div>
+{% endif %}
+
+{% endblock content %}
