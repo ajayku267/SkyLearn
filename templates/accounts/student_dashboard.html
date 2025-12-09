@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %} {% trans 'Student Dashboard' %} | {% trans 'Learning management system' %}{% endblock title %}
+
+{% load static %}
+
+{% block content %}
+
+{% if user.is_authenticated and user.is_student %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Student Dashboard' %}</li>
+    </ol>
+</nav>
+
+{% include 'snippets/messages.html' %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<h1 class="title-1">{% trans 'Student Dashboard' %}</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-book me-2"></i>{% trans 'Enrolled Courses' %}</h5>
+                <h2 class="display-4">{{ enrolled_courses.count }}</h2>
+                <p class="text-muted">{% trans 'Courses you are enrolled in' %}</p>
+                <a href="{% url 'user_course_list' %}" class="btn btn-outline-primary btn-sm">{% trans 'View All' %}</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>{% trans 'Current GPA' %}</h5>
+                <h2 class="display-4">{{ gpa|floatformat:2 }}</h2>
+                <p class="text-muted">{% trans 'Grade Point Average this semester' %}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-graduation-cap me-2"></i>{% trans 'Cumulative GPA' %}</h5>
+                <h2 class="display-4">{{ cgpa|floatformat:2 }}</h2>
+                <p class="text-muted">{% trans 'Overall academic performance' %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>{% trans 'Recent Quiz Attempts' %}</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_attempts %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans 'Quiz' %}</th>
+                                <th>{% trans 'Course' %}</th>
+                                <th>{% trans 'Score' %}</th>
+                                <th>{% trans 'Status' %}</th>
+                                <th>{% trans 'Date' %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in recent_attempts %}
+                            <tr>
+                                <td>{{ attempt.quiz.title }}</td>
+                                <td>{{ attempt.course.title }}</td>
+                                <td>{{ attempt.get_current_score }}/{{ attempt.get_max_score }} ({{ attempt.get_percent_correct }}%)</td>
+                                <td>
+                                    {% if attempt.check_if_passed %}
+                                        <span class="badge bg-success">{% trans 'Passed' %}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{% trans 'Failed' %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ attempt.end|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">{% trans 'You have not attempted any quizzes yet.' %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-book me-2"></i>{% trans 'Enrolled Courses' %}</h5>
+            </div>
+            <div class="card-body">
+                {% if enrolled_courses %}
+                <div class="list-group">
+                    {% for enrollment in enrolled_courses %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1">{{ enrollment.course.title }}</h6>
+                                <small class="text-muted">{{ enrollment.course.code }}</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary">{{ enrollment.grade|default:"N/A" }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small>
+                                <strong>{% trans 'Total:' %}</strong> {{ enrollment.total|floatformat:2 }} |
+                                <strong>{% trans 'Credits:' %}</strong> {{ enrollment.course.credit }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">{% trans 'You are not enrolled in any courses.' %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>{% trans 'Student Information' %}</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>{% trans 'Name:' %}</strong> {{ user.get_full_name }}</p>
+                <p><strong>{% trans 'ID:' %}</strong> {{ user.username }}</p>
+                <p><strong>{% trans 'Program:' %}</strong> {{ student.program.title }}</p>
+                <p><strong>{% trans 'Level:' %}</strong> {{ student.level }}</p>
+                <p><strong>{% trans 'Current Semester:' %}</strong> 
+                    {% if current_semester and current_session %}
+                        {{ current_semester }} {% trans 'Semester' %} {{ current_session }}
+                    {% else %}
+                        {% trans 'Not set' %}
+                    {% endif %}
+                </p>
+                <p><strong>{% trans 'Last Login:' %}</strong> {{ user.last_login|date:"M d, Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <h4>{% trans 'Access Denied' %}</h4>
+    <p>{% trans 'You do not have permission to view this page.' %}</p>
+</div>
+{% endif %}
+
+{% endblock content %}
